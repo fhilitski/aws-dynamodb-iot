@@ -5,9 +5,9 @@ Simple scripts to query AWS DynamoDB database that contains time-series of data 
 
 About files in this repository:
 
-index.html - simple front-end for query of DynamoDB and data processing
-table_processor.js - processing of the query data and representation as HTML table using dynatable.js
-plotly_scatter.js - visualization of the processed data with plot.ly JavaScript library
+index.html - simple front-end for query of DynamoDB and data processing</br>
+table_processor.js - processing of the query data and representation as HTML table using dynatable.js</br>
+plotly_scatter.js - visualization of the processed data with plot.ly JavaScript library</br>
 
 The code should work out of the box, just copy all three file into the same directrory. 
 
