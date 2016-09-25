@@ -1,0 +1,146 @@
+<html>
+
+<head> 
+<title> Query DynamoDB with JavaScript </title>
+<script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
+<script src="https://sdk.amazonaws.com/js/aws-sdk-2.5.4.min.js"></script>
+
+<script src="http://cdnjs.cloudflare.com/ajax/libs/numeral.js/1.4.5/numeral.min.js"></script>
+<script src="http://momentjs.com/downloads/moment.js" type="text/javascript"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Dynatable/0.3.1/jquery.dynatable.min.js" type="text/javascript"></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+<script src="plotly_scatter.js" type="text/javascript"></script>
+<script src="table_processor.js" type="text/javascript"></script>
+
+<script>
+	var query_data;
+	$(document).ready( function(){
+	
+	/* 
+	*  Log-in with the hard-coded AWS credentials
+	*  Temporary solution to test DynamoDB query and data processing
+	*  IAM User only has READ privelegies for the DB
+	*/
+	$('#login-preset').click(function() {
+		AWS.config.region = $('#aws-region').val();
+		var user_credentials = {
+			accessKeyId: $('#aws-aki').val(), 
+			secretAccessKey: $('#aws-sak').val()
+		};
+		//Set AWS region
+		AWS.config.update(user_credentials);
+	
+		/*
+		List all DynamoDB tables
+		create a selector with table names
+		*/
+		var dynamodb = new AWS.DynamoDB();
+		dynamodb.listTables(function(err, data) {
+			$('#table-list').html("");
+			var html_str;
+				if (err == null){
+					html_str = ' DynamoDB tables: <select>';
+					$.each(data.TableNames, function(index, value){
+						html_str += '<option value="' + value + '">' + value + '</option>';
+					});
+					html_str += '</select>';
+					$("#query").show();
+				}
+				else{
+					console.log(err);
+					html_str = err;
+				}
+			$('#table-list').append(html_str);	
+			$('select').on('change', function(){
+				/*
+				Describe the table
+				*/
+				var params = {
+					TableName: $(this).val()
+				};
+				dynamodb.describeTable(params, function(err, data) {
+					if (err) {
+						//an error occurred	
+						$('#table-list').append('<p>' + JSON.stringify(err) + '</p>');
+					}
+					else {
+						//successful response
+						var table = data.Table;
+						$('#table-list').append('<p> '+table.TableName + ": # of items = "+table.ItemCount + '</p>');
+					}
+				});//end describeTable()
+			}); //select->on change()
+		}); //end listTables()
+	});//end login->on click()
+	
+	$("#run-query").click( function() {
+		var docClient = new AWS.DynamoDB.DocumentClient();
+		var device_sn = $('#device-sn').val();
+		var table_name = $('select').val();
+		/*
+		Parameters for the query
+		*/
+		var params = {
+			TableName : table_name,
+			KeyConditionExpression: "#device = :dev_sn",
+			ExpressionAttributeNames:{
+				"#device": "device_id"
+			},
+			ExpressionAttributeValues: {
+				":dev_sn": device_sn
+			}
+		};
+
+		docClient.query(params, function(err, data) {
+			if (err) {
+				$('#query').append('<p> Unable to query. Error: </br>'+JSON.stringify(err, null, 2));
+				$('#process-data-div').hide();
+			} 
+			else {
+				//data.Items now contains the array with returned items
+				query_data = data.Items;
+				$('#query').append('Query was successful!');
+				$('#process-data-div').show();			
+			}	
+		});
+	});// end run-query->on click()
+	
+	$("#process-data").click( function(){
+		new FH.dataprocess(query_data, $('#processed-data'));
+	}); // end process-dat->on click()
+	
+});// end $(document).ready()
+	
+
+</script>
+</head>
+
+<body>
+<h1> Testing AWS JavaScript SDK</h1>
+<div> 
+	<ul>
+		<li><a href = 'http://docs.aws.amazon.com/AWSJavaScriptSDK/guide/' target='_blank'> Developer guide for JavaScript SDK </a></li>
+		<li> <a href = 'https://aws.amazon.com/documentation/dynamodb/' target='_blank'> DynamoDB Documentation </a></li>
+	</ul>
+</div>
+<div style = 'margin:20px'>
+	<p> Amazon log-in with set credentials </p>
+	<p> AWS region: <input id='aws-region' type='text' value='us-east-1'></p>
+	<p> Access Key ID: <input id='aws-aki' type='text' value='XXXXXXXXXXXXXXXX'></p>
+	<p> Secret Access Key: <input id='aws-sak' type="text" value = 'XXXXXXXXXXXXXXXX'></p>
+	<button id = 'login-preset'>Login with set credetials</button>
+</div>
+<div id='table-list' style = 'margin:20px'>
+</div>	
+<div id='query' style = 'margin:20px; display:none'>
+	<p> AWS IoT button S/N: <input id='device-sn' type='text' value='G030JF05XXXXXXXX'> <button id = 'run-query'> Query </button> </p>
+</div>	
+<div id='process-data-div' style = 'margin:20px; display:none'>
+	<button id='process-data'> Process data </button>
+</div>
+<div id='processed-data' style = 'margin:20px'>
+</div>
+
+</body>
+</html>
