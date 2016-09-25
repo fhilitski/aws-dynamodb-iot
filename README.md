@@ -1,7 +1,7 @@
 # aws-dynamodb-iot
-IoT button data visualization
+<b>IoT button data visualization</b>
 
-Simple scripts to query AWS DynamoDB database that contains time-series of data sent by Amazon IoT (Dash) button. The data is represented as a table and a scatter plot. Read detailed description of this project at http://www.fhilitski.com/2016/09/visualizing-aws-…ton-data-part-i and http://www.fhilitski.com/2016/09/visualizing-aws-…ton-data-part-ii. The first link describes set-up of the link between the AWS IoT and DynamoDB. The second link explains the basics of AWS SDK for JavaScript and the  DynamoDB query process. 
+Simple scripts to query AWS DynamoDB database that contains time-series of data sent by Amazon IoT (Dash) button. The data is represented as a table and a scatter plot. Read detailed description of this project <a href = 'http://www.fhilitski.com/2016/09/visualizing-aws-…ton-data-part-i'>here</a> and <a href='http://www.fhilitski.com/2016/09/visualizing-aws-…ton-data-part-ii'>here</a>. The first link describes set-up of the link between the AWS IoT and DynamoDB. The second link explains the basics of AWS SDK for JavaScript and the  DynamoDB query process. 
 
 About files in this repository:
 
