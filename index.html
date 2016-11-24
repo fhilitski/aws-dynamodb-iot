@@ -14,8 +14,11 @@
 <script src="table_processor.js" type="text/javascript"></script>
 
 <script>
-	var query_data;
-	$(document).ready( function(){
+var d;
+$(document).ready( function(){	
+    var query_data = [];
+	var $query = $('#query');
+	var $query_result = $('#query-result');
 	
 	/* 
 	*  Log-in with the hard-coded AWS credentials
@@ -24,11 +27,12 @@
 	*/
 	$('#login-preset').click(function() {
 		AWS.config.region = $('#aws-region').val();
+		//Set AWS region
 		var user_credentials = {
 			accessKeyId: $('#aws-aki').val(), 
 			secretAccessKey: $('#aws-sak').val()
 		};
-		//Set AWS region
+		//Udate user_credentials
 		AWS.config.update(user_credentials);
 	
 		/*
@@ -37,7 +41,7 @@
 		*/
 		var dynamodb = new AWS.DynamoDB();
 		dynamodb.listTables(function(err, data) {
-			$('#table-list').html("");
+			$('#table-list').html('');
 			var html_str;
 				if (err == null){
 					html_str = ' DynamoDB tables: <select>';
@@ -49,25 +53,33 @@
 				}
 				else{
 					console.log(err);
-					html_str = err;
+					html_str = '<p><b>'+err.message+'</b></p>';
+					$("#query").hide();
 				}
-			$('#table-list').append(html_str);	
+			$('#table-list').append(html_str);
+			$('#table-list select').val('Please select...');
+			$('#table-list').append('<div id = "table-description"></div>');
+			var $table_descirption = $('#table-description');
+			
 			$('select').on('change', function(){
 				/*
 				Describe the table
 				*/
+				$query_result.html('');
+			    $('#processed-data').html('');
+				$('#process-data-div').hide();
 				var params = {
 					TableName: $(this).val()
 				};
 				dynamodb.describeTable(params, function(err, data) {
 					if (err) {
 						//an error occurred	
-						$('#table-list').append('<p>' + JSON.stringify(err) + '</p>');
+						$table_descirption.html('<p>' + JSON.stringify(err) + '</p>');
 					}
 					else {
 						//successful response
 						var table = data.Table;
-						$('#table-list').append('<p> '+table.TableName + ": # of items = "+table.ItemCount + '</p>');
+						$table_descirption.html('<p> '+table.TableName + ": # of items = "+table.ItemCount + '</p>');
 					}
 				});//end describeTable()
 			}); //select->on change()
@@ -75,6 +87,7 @@
 	});//end login->on click()
 	
 	$("#run-query").click( function() {
+		$('#processed-data').html('');
 		var docClient = new AWS.DynamoDB.DocumentClient();
 		var device_sn = $('#device-sn').val();
 		var table_name = $('select').val();
@@ -91,23 +104,26 @@
 				":dev_sn": device_sn
 			}
 		};
-
+		
 		docClient.query(params, function(err, data) {
 			if (err) {
-				$('#query').append('<p> Unable to query. Error: </br>'+JSON.stringify(err, null, 2));
+				$query_result.html('<p> Unable to query. Error: </br>'+JSON.stringify(err, null, 2));
 				$('#process-data-div').hide();
 			} 
 			else {
 				//data.Items now contains the array with returned items
 				query_data = data.Items;
-				$('#query').append('Query was successful!');
-				$('#process-data-div').show();			
-			}	
-		});
+				$query_result.html('Query was successful!</br>');
+				$query_result.append('Obtained <b>'+query_data.length+'</b> records');
+				if (query_data.length > 0) {
+					$('#process-data-div').show();			
+				}
+			} //end if (err) else 
+		}); //end docClient.query()
 	});// end run-query->on click()
 	
 	$("#process-data").click( function(){
-		new FH.dataprocess(query_data, $('#processed-data'));
+		d = new FH.dataprocess(query_data, $('#processed-data'));
 	}); // end process-dat->on click()
 	
 });// end $(document).ready()
@@ -127,20 +143,23 @@
 <div style = 'margin:20px'>
 	<p> Amazon log-in with set credentials </p>
 	<p> AWS region: <input id='aws-region' type='text' value='us-east-1'></p>
-	<p> Access Key ID: <input id='aws-aki' type='text' value='XXXXXXXXXXXXXXXX'></p>
-	<p> Secret Access Key: <input id='aws-sak' type="text" value = 'XXXXXXXXXXXXXXXX'></p>
+	<p> Access Key ID: <input id='aws-aki' type='text' value='Enter your access ID here'></p>
+	<p> Secret Access Key: <input id='aws-sak' type="text" value = 'Enter your access key here'></p>
 	<button id = 'login-preset'>Login with set credetials</button>
+	<p> Go to <a href='https://console.aws.amazon.com/iam/home#/users'>AWS IAM</a> to obtain security credentials</p>
 </div>
 <div id='table-list' style = 'margin:20px'>
 </div>	
 <div id='query' style = 'margin:20px; display:none'>
-	<p> AWS IoT button S/N: <input id='device-sn' type='text' value='G030JF05XXXXXXXX'> <button id = 'run-query'> Query </button> </p>
+	<p> IoT device S/N: <input id='device-sn' type='text' value='G030JF05XXXXXXXX'> <button id = 'run-query'> Query </button> </p>
+	<div id='query-result'></div>
 </div>	
 <div id='process-data-div' style = 'margin:20px; display:none'>
 	<button id='process-data'> Process data </button>
+	<div id='processed-data' style = 'margin:20px'>
 </div>
-<div id='processed-data' style = 'margin:20px'>
 </div>
+
 
 </body>
 </html>

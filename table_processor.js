@@ -15,7 +15,11 @@
    */
   FH.dataprocess = function (fetched_data, output_container) {
 	this.fetched_data = fetched_data; //final fetched data
+	
 	this.total_data_length = fetched_data.length; //total length of the fetched data
+	
+	//dataset name to be used in plot and table titles
+	this.data_name = 'IoT device ' + fetched_data[0].device_id;
 	
 	//callbacks are currently not used
     this.onServerDataLoadCallbacks = $.Callbacks(); 
@@ -33,6 +37,7 @@
 	
 	//store columns of generic data in this structure
 	this.columns = {};
+	this.data_selection = [];
 	//date-time format string
 	this._fmt_string = 'YYYY-MM-DD HH:mm:ss.SSSSSS';
 	
@@ -47,32 +52,77 @@
 */
 FH.dataprocess.prototype._setUp = function (){
 	var this_object = this;
+	
+	var table_button = '<button id = "showtable" class = "noselect">Show Table</button> ';
+	var plot_button = ' <button id = "showplot" class = "noselect">Show Plot</button>';
+	var table_button_ref;
+	var plot_button_ref;
+	
 	if (this.getTotalLength() == 0) {
 		this.output.html('<p class = "notice">We did not find anything. Please try other search parameters...</p>');
 	} 
 	else{
-		var info_str = '<p class = "sucess notice"> Total: '+this.getTotalLength()+' records</br></p>';
-		this.output.html(info_str);
-		this._getFormattedDataTable_html(this.fetched_data);
-		this._getFormattedDataTable();
-		this._plotData();
+		var info_str = '<p class = "sucess notice"> Total: '+this.getTotalLength()+' records</p>';
+		info_str += '<p> Select relevant data: </p>';
+		this.buttons.append(info_str);
+		//create list of data fields
+		//make a form with checkboxes
+		//and append them to buttons div
+		this.buttons.append(this._createFieldList());
+		this.dataselector = this.buttons.find("form");
+		//bind action on form change
+		this.dataselector.change(function(){	
+			this_object.output.html('');
+			this_object._updateDataSelection();
+		});
+		
+		//add buttons for plotting and tabulation
+		this.buttons.append(table_button);
+		this.buttons.append(plot_button);
+		plot_button_ref = this.buttons.find("#showplot");
+		table_button_ref = this.buttons.find("#showtable");
+		//bind  actions to added buttons
+		table_button_ref.bind('click', function() {	
+		    this_object.columns = {};
+			//get user_selected selected datafields 
+			this_object._updateDataSelection();
+			
+			this_object._getFormattedDataTable_html();
+			this_object._getFormattedDataTable();
+		});
+		
+		plot_button_ref.bind('click', function() {
+			this_object._plotData();
+		});
+					
+		
+		//table_button_ref.click();		
+		
 	} //end if getTotalLength == 0
 } //end _setUp
 
 /**
-	Outpuit formatted table of data into the html table with id='dataoutput'
+	1. Output formatted table of data into the html table with id='dataoutput'
+	2. Organize data
+	3. Display options for data plotting
 	@method _getFormattedDataTable_html
 	@private
 */ 
- FH.dataprocess.prototype._getFormattedDataTable_html = function (data){
+ FH.dataprocess.prototype._getFormattedDataTable_html = function (){
 	var this_instance = this;
-	var output_div = this.buttons;
+	var output_div = this.output;
+
 	output_div.html("");
+
 	var html_string = "<table id = 'dataoutput'>";
-	html_string += '<caption> Detailed data description </caption>';
-	//console.log('Fetched data in getFormattedData: ' + this_instance.fetched_data);
-	$.each(data, function(index,item) {
+	html_string += '<caption>';
+	html_string += this.data_name;
+	html_string += '</caption>';
+
+	$.each(this_instance.fetched_data, function(index,item) {
+		//flatten each item 
 		var flat_item = this_instance._flattenJSON(item);
+		//and process
 		html_string += this_instance._processItem(flat_item, index);
 	});
 	html_string += '</table>';
@@ -110,10 +160,29 @@ FH.dataprocess.prototype._processItem = function(single_entry, record_index){
 		$.each(single_entry, function (idx, value) {
 			//index contains field name
 			//value has the contents of the field (can be a string, a numeral or an object)
-			//console.log(idx);
+			
+			//check if the index has 'data'
+			var s_idx = idx.split('.');
+			if (s_idx[0] == 'data'){
+				//if so, check if this data is selected
+				if (this_instance.data_selection.indexOf(s_idx[1]) > -1){
+					idx = s_idx[1];
+				}
+				else{
+					//data is not selected
+					//do not add the header
+					idx = -1;
+				}
+			}
+			else{
+				idx = s_idx[0];
+			}
+			
+			if (idx != -1){
 			return_string += h1 + idx + h2;
 			//add column names to the columns object
 			this_instance.columns[idx] = [];
+			}
 		});
 		return_string += '</tr></thead>';
 		//close the header tag
@@ -128,43 +197,64 @@ FH.dataprocess.prototype._processItem = function(single_entry, record_index){
 		//index contains field name
 		//value has the contents of the field (can be a string, a numeral or an object)
 		
-		if (typeof value == 'object'){
-			value = JSON.stringify(value);
-		}
-		//record timestamps as actual date in the format given belov
-		if (idx == 'timestamp'){
-			//the format of timestamp depends on the indended use of the data
-			//for plot.ly default date-time format is
-			//yyyy-mm-dd HH:MM:SS.ssssss
-			value = moment(parseInt(value, 10)).format(this_instance._fmt_string);
-		}
-		
-		//pares batteryVoltage payload as number in mV
-		if (idx == 'data.batteryVoltage'){
-			var mV = value.split("mV");
-			value = parseInt(mV, 10);
-		}
-		
-		//parse data.clickType
-		if (idx == 'data.clickType'){
-			switch (value) {
-				case 'SINGLE':
-					value = 1;
-					break;
-				case 'DOUBLE':
-					value = 2;
-					break;
-				case 'LONG':
-					value = 3;
-					break;
-				default:
-					value = 0;
+		//check if the index starts with 'data'
+		//ex. 'data.TMP006'
+		var s_idx = idx.split('.');
+		if (s_idx[0] == 'data'){
+			//if so, check if this data is selected
+			if (this_instance.data_selection.indexOf(s_idx[1]) > -1){
+				idx = s_idx[1];
+			}	
+			else{
+				//data is not selected
+				//do not add the header
+				idx = -1;
 			}
 		}
+		else{
+			idx = s_idx[0];
+		}
 		
-		return_string += td1 + value + td2;	
-		//add value to the array in the appropriate field of the columns object
-		this_instance.columns[idx].push(value);
+		//now, some data might require additional processing 
+		if (idx != -1){
+			if (typeof value == 'object'){
+				value = JSON.stringify(value);
+			}
+			//record timestamps as actual date in the format given belov
+			if (idx == 'timestamp'){
+				//the format of timestamp depends on the indended use of the data
+				//for plot.ly default date-time format is
+				//yyyy-mm-dd HH:MM:SS.ssssss
+				value = moment(parseInt(value, 10)).format(this_instance._fmt_string);
+			}
+			
+			//pares batteryVoltage payload as number in mV
+			if (idx == 'batteryVoltage'){
+				var mV = value.split("mV");
+				value = parseInt(mV, 10);
+			}
+			
+			//parse data.clickType
+			if (idx == 'clickType'){
+				switch (value) {
+					case 'SINGLE':
+						value = 1;
+						break;
+					case 'DOUBLE':
+						value = 2;
+						break;
+					case 'LONG':
+						value = 3;
+						break;
+					default:
+						value = 0;
+				}
+			}
+			
+			return_string += td1 + value + td2;	
+			//add value to the array in the appropriate field of the columns object
+			this_instance.columns[idx].push(value);
+		}
 	});
 	return_string += tr2;
 		
@@ -181,8 +271,8 @@ FH.dataprocess.prototype._processItem = function(single_entry, record_index){
 */ 
 FH.dataprocess.prototype._getFormattedDataTable = function (){
 	var this_instance = this;
-	var output_div = this.buttons;
-	this.dtable = output_div.find('#dataoutput');
+	var output_div = this.output;
+	this.dtable = this.output.find('#dataoutput');
 	this.dtable.bind('dynatable:init', function(e, dynatable) {
 		dynatable.sorts.functions["date"] = this_instance.sortByDate;
 		dynatable.sorts.functions["usd"] = this_instance.sortByAmount;
@@ -329,8 +419,68 @@ FH.dataprocess.prototype._flattenJSON = function(data) {
 	@private
 **/
 FH.dataprocess.prototype._plotData = function(){
-	this.plot = new FH.plotter(this.columns, this.output, 3, this.columns['data.serialNumber'][1]);
+	this._updateDataSelection();
+	this.data_selection
+	this.plot = new FH.plotter(this.columns, this.output, 3, this.data_name);
 	this.plot.init();
 }
 
+/**
+	Create list of all data fields
+	@method _createFieldList()
+	@private
+**/
+FH.dataprocess.prototype._createFieldList = function(){
+	var data_obj = this.fetched_data[0].data;
+	var list = [];
+	var html_string = ["<form>"];
+	//variables for checkbox html string
+	var cb1 = "<input style='margin-left:20px' type = 'checkbox' value = '";
+	var cb2 = "' name = '";
+	var cb3 = "' checked = 'checked' ";
+	var cb4 = " >";
+	var d = '';
+	var exclude = ["Device"];
+	$.each(data_obj, function(index, item) {
+		//this statement allows for exclustion of some datafields
+		//console.log(index);
+		if (exclude.indexOf(index) > -1){
+			d = "disabled";
+			cb3 = "'";
+		}
+		else{
+			//add data to the list data
+			d = "";
+			cb3 = "' checked = 'checked' ";
+			list.push(index);
+		}
+		html_string.push(cb1+index+cb2+index+cb3+d+cb4);
+		html_string.push(index);
+		
+	});
+	html_string.push("</form>");
+	return html_string.join('');		
+}
+
+/**
+	Updates the list of selected data for plotting
+	based on user input
+	@method _updateDataSelection
+	@private
+
+**/
+FH.dataprocess.prototype._updateDataSelection = 
+function(){
+	var list = [];
+	if (this.dataselector !== undefined){
+		var ds = this.dataselector;
+		$.each(ds.find('input'), function(key, value){
+			if (value.checked){
+				list.push(value.name);
+			}
+		});
+	}
+	this.data_selection = list;
+}
 }(window.FH= window.FH || {}, jQuery));
+
