@@ -1,7 +1,12 @@
 # aws-dynamodb-iot
 <b>IoT button data visualization</b>
 
-Simple scripts to query AWS DynamoDB database that contains time-series of data sent by Amazon IoT (Dash) button. The data is represented as a table and a scatter plot. Read detailed description of this project <a href = 'http://www.fhilitski.com/2016/09/visualizing-aws-iot-button-data/'>here</a> and <a href='http://www.fhilitski.com/2016/09/visualizing-aws-iot-button-data-part-ii/'>here</a>. <a href = 'http://www.fhilitski.com/2016/09/visualizing-aws-iot-button-data/'>The first link</a> describes set-up of the link between the AWS IoT and DynamoDB.  <a href='http://www.fhilitski.com/2016/09/visualizing-aws-iot-button-data-part-ii/'>The second link</a> explains the basics of AWS SDK for JavaScript and the DynamoDB query process. 
+Simple scripts to query AWS DynamoDB database that contains time-series of data sent by Amazon IoT (Dash) button. The data is represented as a table and a scatter plot. Read detailed description of this project on my blog: <a href = 'http://www.fhilitski.com/intrnet-of-things/'>on my blog</a>. 
+<ul>
+<li><a href='http://www.fhilitski.com/2016/09/visualizing-aws-iot-button-data-part-ii/'>How to set-up of the link between the AWS IoT and DynamoDB</a></li>
+<li><a href='http://www.fhilitski.com/2016/09/visualizing-aws-iot-button-data-part-ii/'>Basics of AWS SDK for JavaScript and the DynamoDB query process</a></li>
+<li><a href = 'http://www.fhilitski.com/2016/11/temperature-sensor-with-raspberry-pi-3-and-aws/'>Connection Raspberry Pi with temperature sensors to AWS</a></li>
+
 <p>
 About files in this repository:</br>
 index.html - simple front-end for query of DynamoDB and data processing</br>
@@ -9,6 +14,8 @@ table_processor.js - processing of the query data and representation as HTML tab
 plotly_scatter.js - visualization of the processed data with plot.ly JavaScript library</br>
 </p>
 The code should work out of the box, just copy all three file into the same directrory. 
+</br>You have to obtain security credential using AWS IAM and have the databases set-up as described in posts mentioned above
+
 
 
 
