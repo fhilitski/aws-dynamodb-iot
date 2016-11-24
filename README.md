@@ -14,7 +14,7 @@ table_processor.js - processing of the query data and representation as HTML tab
 plotly_scatter.js - visualization of the processed data with plot.ly JavaScript library</br>
 </p>
 The code should work out of the box, just copy all three file into the same directrory. 
-</br>You have to obtain security credential using AWS IAM and have the databases set-up as described in posts mentioned above
+</br>You have to obtain security credentials using AWS IAM, make sure they allow you to read DynamoDB, and have the databas(es) set-up as described in posts mentioned above.
 
 
 
