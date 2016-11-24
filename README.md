@@ -7,6 +7,7 @@ Simple scripts to query AWS DynamoDB database that contains time-series of data 
 <li><a href='http://www.fhilitski.com/2016/09/visualizing-aws-iot-button-data-part-ii/'>Basics of AWS SDK for JavaScript and the DynamoDB query process</a></li>
 <li><a href = 'http://www.fhilitski.com/2016/11/temperature-sensor-with-raspberry-pi-3-and-aws/'>Connection Raspberry Pi with temperature sensors to AWS</a></li>
 
+
 <p>
 About files in this repository:</br>
 index.html - simple front-end for query of DynamoDB and data processing</br>
@@ -14,6 +15,7 @@ table_processor.js - processing of the query data and representation as HTML tab
 plotly_scatter.js - visualization of the processed data with plot.ly JavaScript library</br>
 </p>
 The code should work out of the box, just copy all three file into the same directrory. 
+The script is also hosted online <a href='http://new.fhilitski.com/test/code-aws-dynamo/index.html'>here</a>.
 </br>You have to obtain security credentials using AWS IAM, make sure they allow you to read DynamoDB, and have the databas(es) set-up as described in posts mentioned above.
 <p> Example of the produced plot is below </p>
 <div>
