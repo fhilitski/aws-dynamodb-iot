@@ -15,7 +15,7 @@ plotly_scatter.js - visualization of the processed data with plot.ly JavaScript 
 </p>
 The code should work out of the box, just copy all three file into the same directrory. 
 </br>You have to obtain security credentials using AWS IAM, make sure they allow you to read DynamoDB, and have the databas(es) set-up as described in posts mentioned above.
-<iframe width="900" height="800" frameborder="0" scrolling="no" src="//plot.ly/~f.hilitski/140.embed"></iframe>
+<p> Example of the produced plot is below </p>
 <div>
     <a href="https://plot.ly/~f.hilitski/140/" target="_blank" title="" style="display: block; text-align: center;"><img src="https://plot.ly/~f.hilitski/140.png" alt="" style="max-width: 100%;width: 600px;"  width="600" onerror="this.onerror=null;this.src='https://plot.ly/404.png';" /></a>
     <script data-plotly="f.hilitski:140"  src="https://plot.ly/embed.js" async></script>
